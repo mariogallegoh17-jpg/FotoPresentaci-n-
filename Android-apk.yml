@@ -1,0 +1,58 @@
+name: Crear APK Android
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Extraer proyecto ZIP
+        run: |
+          if [ -f FotoPresentacion_proyecto.zip ]; then
+            unzip -q FotoPresentacion_proyecto.zip
+          else
+            echo "ERROR: No se encuentra FotoPresentacion_proyecto.zip en la raíz del repositorio."
+            ls -la
+            exit 1
+          fi
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Instalar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar herramientas Android
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Compilar APK
+        run: |
+          cd FotoPresentacion
+          gradle assembleDebug
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FotoPresentacion-debug-apk
+          path: FotoPresentacion/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
